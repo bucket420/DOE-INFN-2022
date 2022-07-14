@@ -64,6 +64,7 @@ def runtime_measure_mp(path, n_files, n_processes):
     for p in processes:
         p.join()
      
+    np.concatenate(tuple(result))
     runtime = time.time() - start_time
     
     return runtime
@@ -135,4 +136,10 @@ def runtime_vs_size_plot_mp(path, n_processes, max_files, step, n_loops, target_
         for i in range(len(data[0])): 
             plt.annotate(round(col_average(data[1:])[i], 2), (data[0][i], col_average(data[1:])[i]))
         plt.savefig('figures/rdf/%s/runtime_vs_size_mp_%d_%d_%d_%d.png' % (target_dir, n_processes, max_files, step, n_loops), bbox_inches='tight')
-        
+
+runtime_vs_processes_plot(path, 60, 4, 10, "merged")
+runtime_vs_processes_plot(path, 80, 5, 10, "merged")
+runtime_vs_size_plot_mp(path, 20, 60, 4, 10, "merged")
+runtime_vs_size_plot_mp(path, 40, 80, 5, 10, "merged")
+
+
