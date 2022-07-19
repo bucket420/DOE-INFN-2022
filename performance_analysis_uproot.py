@@ -59,6 +59,60 @@ def runtime_measure_mp(path, n_files, n_processes):
     
     return time.time() - start
 
+def partition_helper(slice_entries, file_entries, file_curr, entry_curr):
+    if slice_entries <= file_entries[file_curr] - entry_curr:
+        return [file_curr, slice_entries + entry_curr]
+    elif file_curr == len(file_entries) - 1:
+        return [file_curr, file_entries[-1]]
+    else:
+        return partition_helper(slice_entries - file_entries[file_curr] + entry_curr, file_entries, file_curr + 1, 0)
+
+def partition(files, n_processes):
+    file_entries = [file.num_entries for file in files]
+    slice_entries = math.ceil(sum(file_entries) / n_processes)
+    slices = []
+    file_start = 0
+    entry_start = 0
+    while not bool(slices) or slices[-1][-1] != (file_entries[-1]):
+        slices.append([file_start, entry_start] + partition_helper(slice_entries, file_entries, file_start, entry_start))
+        file_start = slices[-1][-2]
+        entry_start = slices[-1][-1]
+    return slices
+
+def read_part_of_data_test(files, partitions, index, result):
+    data = []
+    for i in range(partitions[index][0], partitions[index][2] + 1):
+        data.append(files[i].arrays("candidate_vMass", 
+                              "(candidate_charge == 0)\
+                              & (candidate_cosAlpha > 0.99)\
+                              & (candidate_lxy / candidate_lxyErr > 3.0)\
+                              & (candidate_vProb > 0.05)\
+                              & (ditrack_mass > 1.014) & (ditrack_mass < 1.024)\
+                              & (candidate_vMass > 5.33) & (candidate_vMass < 5.4)",
+                              entry_start=partitions[index][1] if i == partitions[index][0] else None,
+                              entry_stop=partitions[index][3] + 1 if i == partitions[index][2] else None,
+                              array_cache=None,
+                              library="np")["candidate_vMass"])
+    result.append(np.concatenate(tuple(data)))
+
+def runtime_measure_mp_test(path, n_files, n_processes):
+    start = time.time()
+    files = [uproot.open(path=path + filename + ":rootuple/CandidateTree", object_cache=None, array_cache=None) for filename in sorted(os.listdir(path))[:n_files]]
+    partitions = partition(files, n_processes)
+    result = multiprocessing.Manager().list()
+    processes = []
+    for i in range(n_processes):
+        p = multiprocessing.Process(target=read_part_of_data_test, args=[files, partitions, i, result])
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
+    
+    np.concatenate(tuple(result))
+    
+    return time.time() - start
+    
 def runtime_vs_size_mp(path, n_processes, max_files, step, n_loops, target_dir):
     result_path = ("runtime_tests_uproot/%s/runtime_vs_size_mp_%d_%d_%d_%d.csv" % (target_dir, n_processes, max_files, step, n_loops))
     x = [get_total_size(path, a) for a in range(step, max_files + step, step)]
@@ -126,5 +180,42 @@ def runtime_vs_processes_plot(path, n_files, max_processes, step, n_loops, targe
             plt.annotate(round(col_average(data[:])[i], 2), (data[0][i], col_average(data[:])[i]))
         plt.savefig('figures/uproot/%s/runtime_vs_processes_%d_%d_%d_%d.png' % (target_dir, n_files, max_processes, step, n_loops), bbox_inches='tight')
         
+def runtime_vs_processes_test(path, n_files, max_processes, step, n_loops, target_dir):
+    parent_dir = path.split('/')[-2]
+    result_path = ("runtime_tests_uproot/%s/runtime_vs_processes_%d_%d_%d_%d.csv" % (target_dir, n_files, max_processes, step, n_loops))
+    x = [a for a in range(step, max_processes + step, step)]
+    with open(result_path, "w+", newline="") as f:
+        csv.writer(f).writerow(x)
+    for n in range(n_loops):
+        y = [runtime_measure_mp_test(path, n_files, i) for i in range(step, max_processes + step, step)]
+        with open(result_path, "a+", newline="") as f:
+            csv.writer(f).writerow(y)
+            
+def runtime_vs_processes_plot_test(path, n_files, max_processes, step, n_loops, target_dir):
+    parent_dir = path.split('/')[-2]
+    if not os.path.exists("runtime_tests_uproot/%s" % (target_dir)):
+        os.mkdir("runtime_tests_uproot/%s" % (target_dir))
+    if not os.path.exists("figures/uproot/%s" % (target_dir)):
+        os.mkdir("figures/uproot/%s" % (target_dir))
+    result_path = ("runtime_tests_uproot/%s/runtime_vs_processes_%d_%d_%d_%d.csv" % (target_dir, n_files, max_processes, step, n_loops))
+    if not os.path.exists(result_path):
+        runtime_vs_processes_test(path, n_files, max_processes, step, n_loops, target_dir)
+    with open(result_path, "r") as f:
+        data = [[float(a) for a in row] for row in csv.reader(f)]
+        plt.figure(figsize = (20, 8))
+        plt.title('Runtime vs Processes (%d files, %.2f GB)' % (n_files, get_total_size(path, n_files)))
+        plt.xlabel('Processes')
+        plt.ylabel('Runtime (s)')
+        #plt.scatter(data[0], col_average(data))
+        #for r in range(1, len(data)):
+            #plt.scatter(data[0], data[r])
+        plt.xticks(range(step, max_processes + 1, step))
+        plt.errorbar(data[0], col_average(data[:]), yerr=col_standard_deviation(data[:]), fmt="o", ecolor="orange")
+        for i in range(len(data[0])): 
+            plt.annotate(round(col_average(data[:])[i], 2), (data[0][i], col_average(data[:])[i]))
+        plt.savefig('figures/uproot/%s/runtime_vs_processes_%d_%d_%d_%d.png' % (target_dir, n_files, max_processes, step, n_loops), bbox_inches='tight')
+        
 # runtime_vs_processes_plot(path, 60, 60, 4, 10, "merged")
-runtime_vs_processes_plot(path, 80, 80, 5, 10, "merged")
+# runtime_vs_processes_plot(path, 80, 80, 5, 10, "merged")
+
+runtime_vs_processes_plot_test(path, 60, 60, 4, 10, "merged_test")
