@@ -90,7 +90,7 @@ def read_part_of_data_test(files, partitions, index, result):
                               & (ditrack_mass > 1.014) & (ditrack_mass < 1.024)\
                               & (candidate_vMass > 5.33) & (candidate_vMass < 5.4)",
                               entry_start=partitions[index][1] if i == partitions[index][0] else None,
-                              entry_stop=partitions[index][3] + 1 if i == partitions[index][2] else None,
+                              entry_stop=partitions[index][3] if i == partitions[index][2] else None,
                               array_cache=None,
                               library="np")["candidate_vMass"])
     result.append(np.concatenate(tuple(data)))
@@ -218,4 +218,8 @@ def runtime_vs_processes_plot_test(path, n_files, max_processes, step, n_loops, 
 # runtime_vs_processes_plot(path, 60, 60, 4, 10, "merged")
 # runtime_vs_processes_plot(path, 80, 80, 5, 10, "merged")
 
-runtime_vs_processes_plot_test(path, 60, 60, 4, 10, "merged_test")
+runtime_vs_processes_plot_test(path, 60, 80, 5, 10, "merged_test")
+runtime_vs_processes_plot_test(path, 80, 80, 5, 10, "merged_test")
+runtime_vs_processes_plot_test(path, len(os.listdir(path)), 80, 5, 10, "merged_test")
+
+

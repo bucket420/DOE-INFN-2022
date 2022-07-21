@@ -193,16 +193,17 @@ def runtime_vs_size_plot_mp(path, n_processes, max_files, step, n_loops, target_
             plt.annotate(round(col_average(data[1:])[i], 2), (data[0][i], col_average(data[1:])[i]))
         plt.savefig('figures/rdf/%s/runtime_vs_size_mp_%d_%d_%d_%d.png' % (target_dir, n_processes, max_files, step, n_loops), bbox_inches='tight')
 
-path = "../merged/"
+path = "../data/64_files/"
 
-# runtime_vs_processes_plot(path, 60, 4, 10, "merged")
-# runtime_vs_processes_plot(path, 80, 5, 10, "merged")
+runtime_vs_processes_plot(path, 60, 5, 10, "64_files")
+runtime_vs_processes_plot(path, 80, 5, 10, "64_files")
+runtime_vs_processes_plot(path, 99, 5, 10, "64_files")
 # runtime_vs_size_plot_mp(path, 20, 60, 4, 10, "merged")
 # runtime_vs_size_plot_mp(path, 40, 80, 5, 10, "merged")
 # runtime_vs_processes_plot(path, 10, 1, 10, "merged")
 # runtime_vs_processes_plot(path, 20, 2, 10, "merged")
 # runtime_vs_size_plot_mp(path, 2, 10, 1, 10, "merged")
 # runtime_vs_size_plot_mp(path, 4, 20, 1, 10, "merged")
-runtime_vs_size_plot(path, 60, 4, 10, "merged")
-runtime_vs_size_plot(path, 80, 5, 10, "merged")
+# runtime_vs_size_plot(path, 60, 4, 10, "merged")
+# runtime_vs_size_plot(path, 80, 5, 10, "merged")
 
