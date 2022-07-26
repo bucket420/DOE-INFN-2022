@@ -63,6 +63,7 @@ def redistribute(path, n_files):
     for p in processes:
         p.join()
     
-redistribute(path, 32)  
-redistribute(path, 64)
-redistribute(path, 100)
+# redistribute(path, 32)  
+# redistribute(path, 64)
+redistribute(path, 128)
+redistribute(path, 1)
