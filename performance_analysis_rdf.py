@@ -1,11 +1,10 @@
-import ROOT
 import csv
-import multiprocessing
-import os
-import time
-import numpy as np
-import concurrent.futures
 import matplotlib.pyplot as plt
+import multiprocessing
+import numpy as np
+import os
+import ROOT
+import time
 
 def get_total_size(path, n_files):
     filenames = sorted(os.listdir(path))
@@ -52,9 +51,9 @@ def to_numpy(files, result):
     result.append(cut.AsNumpy(["candidate_vMass"])["candidate_vMass"])
 
 def runtime_measure(path, n_files, mt):
+    if n_files == 0: return 0
     # Specify the number of threads
-    if mt:
-        ROOT.ROOT.EnableImplicitMT()
+    if mt: ROOT.ROOT.EnableImplicitMT()
     
     # Get paths to all the files to be read 
     filenames = sorted(os.listdir(path))
@@ -79,6 +78,7 @@ def runtime_measure(path, n_files, mt):
     return time.time() - start_time
 
 def runtime_measure_mp(path, n_files, n_processes):
+    if n_files == 0: return 0
     if n_processes == 0: return runtime_measure(path, n_files, False)
     start_time = time.time()
     partitions = partition(path, n_files, n_processes)
@@ -97,105 +97,29 @@ def runtime_measure_mp(path, n_files, n_processes):
     
     return runtime
 
-def runtime_vs_processes(path, n_files, step, n_loops, target_dir):
-    parent_dir = path.split('/')[-2]
-    result_path = ("runtime_tests_rdf/%s/runtime_vs_processes_%d_%d_%d.csv" % (target_dir, n_files, step, n_loops))
-    x = [a for a in range(0, n_files + step, step)]
-    with open(result_path, "w+", newline="") as f:
-        csv.writer(f).writerow(x)
-    for n in range(n_loops):
-        y = [runtime_measure_mp(path, n_files, i) for i in range(0, n_files + step, step)]
-        with open(result_path, "a+", newline="") as f:
-            csv.writer(f).writerow(y)
-            
-def runtime_vs_processes_plot(path, n_files, step, n_loops, target_dir):
-    parent_dir = path.split('/')[-2]
-    if not os.path.exists("runtime_tests_rdf/%s" % (target_dir)):
-        os.mkdir("runtime_tests_rdf/%s" % (target_dir))
-    if not os.path.exists("figures/rdf/%s" % (target_dir)):
-        os.mkdir("figures/rdf/%s" % (target_dir))
-    result_path = ("runtime_tests_rdf/%s/runtime_vs_processes_%d_%d_%d.csv" % (target_dir, n_files, step, n_loops))
-    if not os.path.exists(result_path):
-        runtime_vs_processes(path, n_files, step, n_loops, target_dir)
-    with open(result_path, "r") as f:
-        data = [[float(a) for a in row] for row in csv.reader(f)]
-        plt.figure(figsize = (15, 5))
-        plt.title('Runtime vs Processes (%.2f GB)' % (get_total_size(path, n_files)))
-        plt.xlabel('Processes')
-        plt.ylabel('Runtime (s)')
-        #plt.scatter(data[0], col_average(data))
-        #for r in range(1, len(data)):
-            #plt.scatter(data[0], data[r])
-        plt.xticks(range(step, n_files + 1, step))
-        plt.errorbar(data[0], col_average(data[1:]), yerr=col_standard_deviation(data[1:]), fmt="o", ecolor="orange")
-        for i in range(len(data[0])): 
-            plt.annotate(round(col_average(data[1:])[i], 2), (data[0][i], col_average(data[1:])[i]))
-        plt.savefig('figures/rdf/%s/runtime_vs_processes_%d_%d_%d.png' % (target_dir, n_files, step, n_loops), bbox_inches='tight')
+def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_loops, var_max, constant=None):
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
 
-def runtime_vs_size(path, max_files, step, n_loops, target_dir):
-    result_path = ("runtime_tests_rdf/%s/runtime_vs_size_%d_%d_%d.csv" % (target_dir, max_files, step, n_loops))
-    x = [get_total_size(path, a) for a in range(step, max_files + step, step)]
-    with open(result_path, "w+", newline="") as f:
-        csv.writer(f).writerow(x)
-    for n in range(n_loops):
-        y = [runtime_measure(path, i, True) for i in range(step, max_files + step, step)]
-        with open(result_path, "a+", newline="") as f:
-            csv.writer(f).writerow(y)        
+    result_path = ("%s/runtime_vs_%s_%d_%d_%d_%d.csv" % (target_dir, variable, constant, var_max, step, n_loops)) if constant else ("%s/runtime_vs_%s_%d_%d_%d.csv" % (target_dir, variable, var_max, step, n_loops))
+    
+    x = [get_total_size(path, a) for a in range(0, var_max + step, step)] if "size" in variable else [a for a in range(0, var_max + step, step)]
         
-def runtime_vs_size_mp(path, n_processes, max_files, step, n_loops, target_dir):
-    result_path = ("runtime_tests_rdf/%s/runtime_vs_size_mp_%d_%d_%d_%d.csv" % (target_dir, n_processes, max_files, step, n_loops))
-    x = [get_total_size(path, a) for a in range(step, max_files + step, step)]
     with open(result_path, "w+", newline="") as f:
         csv.writer(f).writerow(x)
     for n in range(n_loops):
-        y = [runtime_measure_mp(path, i, n_processes) for i in range(step, max_files + step, step)]
+        y = [measure_function(*(path, i if variable == "size" else constant, constant if variable == "size" else i) if constant else (path, i, True)) for i in range(0, var_max + step, step)]
         with open(result_path, "a+", newline="") as f:
             csv.writer(f).writerow(y)
             
-def runtime_vs_size_plot(path, max_files, step, n_loops, target_dir):
-    if not os.path.exists("runtime_tests_rdf/%s" % (target_dir)):
-        os.mkdir("runtime_tests_rdf/%s" % (target_dir))
-    if not os.path.exists("figures/rdf/%s" % (target_dir)):
-        os.mkdir("figures/rdf/%s" % (target_dir))
-    result_path = ("runtime_tests_rdf/%s/runtime_vs_size_%d_%d_%d.csv" % (target_dir, max_files, step, n_loops))
-    if not os.path.exists(result_path):
-        runtime_vs_size(path, max_files, step, n_loops, target_dir)
-    with open(result_path, "r") as f:
-        data = [[float(a) for a in row] for row in csv.reader(f)]
-        plt.figure(figsize = (15, 5))
-        plt.title('Runtime vs Size')
-        plt.xlabel('Size (GB)')
-        plt.ylabel('Runtime (s)')
-        #plt.scatter(data[0], col_average(data))
-        #for r in range(1, len(data)):
-            #plt.scatter(data[0], data[r])
-        plt.errorbar(data[0], col_average(data), yerr=col_standard_deviation(data), fmt="o", ecolor="orange")
-        plt.savefig('figures/rdf/%s/runtime_vs_size_%d_%d_%d.png' % (target_dir, max_files, step, n_loops), bbox_inches='tight')
-            
-def runtime_vs_size_plot_mp(path, n_processes, max_files, step, n_loops, target_dir):
-    if not os.path.exists("runtime_tests_rdf/%s" % (target_dir)):
-        os.mkdir("runtime_tests_rdf/%s" % (target_dir))
-    if not os.path.exists("figures/rdf/%s" % (target_dir)):
-        os.mkdir("figures/rdf/%s" % (target_dir))
-    result_path = ("runtime_tests_rdf/%s/runtime_vs_size_mp_%d_%d_%d_%d.csv" % (target_dir, n_processes, max_files, step, n_loops))
-    if not os.path.exists(result_path):
-        runtime_vs_size_mp(path, n_processes, max_files, step, n_loops, target_dir)
-    with open(result_path, "r") as f:
-        data = [[float(a) for a in row] for row in csv.reader(f)]
-        plt.figure(figsize = (15, 5))
-        plt.title('Runtime vs Size (%d processes)' % (n_processes))
-        plt.xlabel('Size (GB)')
-        plt.ylabel('Runtime (s)')
-        #plt.scatter(data[0], col_average(data))
-        #for r in range(1, len(data)):
-            #plt.scatter(data[0], data[r])
-        plt.errorbar(data[0], col_average(data[1:]), yerr=col_standard_deviation(data[1:]), fmt="o", ecolor="orange")
-        for i in range(len(data[0])): 
-            plt.annotate(round(col_average(data[1:])[i], 2), (data[0][i], col_average(data[1:])[i]))
-        plt.savefig('figures/rdf/%s/runtime_vs_size_mp_%d_%d_%d_%d.png' % (target_dir, n_processes, max_files, step, n_loops), bbox_inches='tight')
 
-path = "../data/128_files/"
-# ROOT.ROOT.DisableImplicitMT()
+path = "/home/hdhoang2001/data/128_files/"
+target_dir = "runtime_tests_rdf/test"
+
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 10, 128, 128)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 10, 128, 64)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 10, 128, 32)
+runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 10, 128)
 # runtime_vs_processes_plot(path, 60, 5, 10, "64_files")
 # runtime_vs_processes_plot(path, 128, 4, 11, "128_files")
 # runtime_vs_processes_plot(path, 96, 4, 11, "128_files")
@@ -203,7 +127,7 @@ path = "../data/128_files/"
 # runtime_vs_size_plot_mp(path, 64, 128, 4, 11, "128_files")
 # runtime_vs_size_plot_mp(path, 32, 128, 4, 11, "128_files")
 # runtime_vs_size_plot_mp(path, 16, 128, 4, 11, "128_files")
-runtime_vs_size_plot(path, 128, 4, 11, "128_files")
+# runtime_vs_size_plot(path, 128, 4, 11, "128_files")
 
 
 
