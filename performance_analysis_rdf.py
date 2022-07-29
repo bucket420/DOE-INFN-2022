@@ -119,7 +119,7 @@ target_dir = "runtime_tests_rdf/tesla"
 # runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 10, 128, 128)
 runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 10, 128, 64)
 runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 10, 128, 32)
-runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 10, 128)
+# runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 10, 128)
 # runtime_vs_processes_plot(path, 60, 5, 10, "64_files")
 # runtime_vs_processes_plot(path, 128, 4, 11, "128_files")
 # runtime_vs_processes_plot(path, 96, 4, 11, "128_files")
