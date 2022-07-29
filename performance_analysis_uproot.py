@@ -115,7 +115,7 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
         with open(result_path, "a+", newline="") as f:
             csv.writer(f).writerow(y)
         
-path = "/home/hdhoang2001/data/128_files/"
+path = "data/128_files/"
 target_dir = "runtime_tests_uproot/tesla"
 
 runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 10, 128, 128)

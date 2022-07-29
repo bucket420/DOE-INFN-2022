@@ -108,15 +108,15 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
     with open(result_path, "w+", newline="") as f:
         csv.writer(f).writerow(x)
     for n in range(n_loops):
-        y = [measure_function(*(path, i if variable == "size" else constant, constant if variable == "size" else i) if constant else (path, i, True)) for i in range(0, var_max + step, step)]
+        y = [measure_function(*(path, i if "size" in variable else constant, constant if "size" in variable else i) if constant else (path, i, True)) for i in range(0, var_max + step, step)]
         with open(result_path, "a+", newline="") as f:
             csv.writer(f).writerow(y)
             
 
-path = "/home/hdhoang2001/data/128_files/"
-target_dir = "runtime_tests_rdf/test"
+path = "data/128_files/"
+target_dir = "runtime_tests_rdf/tesla"
 
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 10, 128, 128)
+# runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 10, 128, 128)
 runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 10, 128, 64)
 runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 10, 128, 32)
 runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 10, 128)
