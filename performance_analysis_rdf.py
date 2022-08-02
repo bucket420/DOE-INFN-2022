@@ -115,7 +115,7 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
             csv.writer(f).writerow(y)
             
 
-path = "data/128_files/"
+path = "../data/128_files/"
 target_dir = "runtime_tests_rdf/" + str(sys.argv[1])
 
 runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 128)
