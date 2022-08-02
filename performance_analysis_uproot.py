@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
+import sys
 import time
 import uproot
 
@@ -11,6 +12,11 @@ def get_total_size(path, n_files):
     filenames = sorted(os.listdir(path))
     total_size = sum([os.path.getsize(path + filenames[i]) for i in range(n_files)])
     return total_size / (2**30)
+
+def get_num_entries(path, n_files):
+    filenames = sorted(os.listdir(path))
+    num_entries = sum([uproot.open(path + filenames[i] + ":rootuple/CandidateTree").num_entries for i in range(n_files)])
+    return num_entries
 
 def col_average(data):
     n_rows = len(data)
@@ -23,7 +29,6 @@ def col_standard_deviation(data):
     mean = col_average(data)
     return [(sum([(data[i][j] - mean[j])**2 for i in range(1, n_rows)]) / (n_rows - 1))**0.5 for j in range(n_cols)]
 
-    
 def partition_helper(slice_entries, file_entries, file_curr, entry_curr):
     if slice_entries <= file_entries[file_curr] - entry_curr:
         return [file_curr, slice_entries + entry_curr]
@@ -106,7 +111,7 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
 
     result_path = ("%s/runtime_vs_%s_%d_%d_%d_%d.csv" % (target_dir, variable, constant, var_max, step, n_loops)) if constant else ("%s/runtime_vs_%s_%d_%d_%d.csv" % (target_dir, variable, var_max, step, n_loops))
     
-    x = [get_total_size(path, a) for a in range(0, var_max + step, step)] if "size" in variable else [a for a in range(0, var_max + step, step)]
+    x = [a for a in range(0, var_max + step, step)]
         
     with open(result_path, "w+", newline="") as f:
         csv.writer(f).writerow(x)
@@ -116,12 +121,12 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
             csv.writer(f).writerow(y)
         
 path = "data/128_files/"
-target_dir = "runtime_tests_uproot/tesla"
+target_dir = "runtime_tests_uproot/" + str(sys.argv[1])
 
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 10, 128, 128)
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 10, 128, 64)
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 10, 128, 32)
-runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 10, 128)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 128)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 64)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 32)
+runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 20, 128)
 
 
 
