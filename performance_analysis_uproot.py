@@ -114,21 +114,22 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
     x = [a for a in range(0, var_max + step, step)]
     
     if not os.path.exists(result_path):
-        with open(result_path, "w+", newline="") as f:
+        with open(result_path, "w", newline="") as f:
             csv.writer(f).writerow(x)
     for n in range(n_loops):
+        with open(result_path, "r") as f:
+            if sum(1 for row in csv.reader(f)) == n_loops + 1: break
         y = [measure_function(*(path, i if "size" in variable else constant, constant if "size" in variable else i) if constant else (path, i)) for i in range(0, var_max + step, step)]
-        with open(result_path, "a+", newline="") as f:
+        with open(result_path, "a", newline="") as f:
             csv.writer(f).writerow(y)
         
 path = "../data/128_files/"
 target_dir = "runtime_tests_uproot/" + str(sys.argv[1])
 
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 128)
+# runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 128)
 # runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 64)
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 32)
-runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 20, 128)
-
+# runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 32)
+# runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 20, 128)
 
 
 
