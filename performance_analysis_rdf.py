@@ -55,7 +55,7 @@ def to_numpy(files, result):
 def runtime_measure(path, n_files, mt):
     if n_files == 0: return 0
     # Specify the number of threads
-    if mt: ROOT.ROOT.EnableImplicitMT(32)
+    if mt: ROOT.ROOT.EnableImplicitMT()
     
     # Get paths to all the files to be read 
     filenames = sorted(os.listdir(path))
