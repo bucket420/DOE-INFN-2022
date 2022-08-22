@@ -79,6 +79,34 @@ def runtime_measure(path, n_files, mt):
     
     return time.time() - start_time
 
+def runtime_measure_mt(path, n_files, n_threads):
+    if n_files == 0: return 0
+    if n_threads == 0: return runtime_measure(path, n_files, False)
+    
+    ROOT.ROOT.EnableImplicitMT(n_threads)
+    
+    # Get paths to all the files to be read 
+    filenames = sorted(os.listdir(path))
+    files_to_read = ROOT.std.vector('string')()
+    for i in range(n_files):
+        files_to_read.push_back(path + filenames[i])
+    
+    # Measure runtime
+    start_time = time.time()
+    
+    data = ROOT.RDataFrame("rootuple/CandidateTree", files_to_read)
+    cut = data.Filter("candidate_charge == 0")\
+          .Filter("candidate_cosAlpha > 0.99")\
+          .Filter("candidate_vProb > 0.05")\
+          .Filter("candidate_lxy / candidate_lxyErr > 3.0")\
+          .Filter("ditrack_mass > 1.014")\
+          .Filter("ditrack_mass < 1.024")\
+          .Filter("candidate_vMass > 5.33")\
+          .Filter("candidate_vMass < 5.40")
+    np_array = cut.AsNumpy(["candidate_vMass"])
+    
+    return time.time() - start_time
+
 def runtime_measure_mp(path, n_files, n_processes):
     if n_files == 0: return 0
     if n_processes == 0: return runtime_measure(path, n_files, False)
@@ -122,11 +150,13 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
 path = "../data/128_files/"
 target_dir = "runtime_tests_rdf/" + str(sys.argv[1])
 
+runtime_vs_variable(path, target_dir, runtime_measure_mt, "threads", 4, 20, 128, 128)
+
 # runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 128)
 # runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 64)
 # runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 32)
 # runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 20, 128)
-runtime_vs_variable(path, target_dir, runtime_measure, "size", 1, 5, 16)
+# runtime_vs_variable(path, target_dir, runtime_measure, "size", 1, 5, 16)
 
 
 
