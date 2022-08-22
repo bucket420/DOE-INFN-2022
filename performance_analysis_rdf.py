@@ -81,7 +81,9 @@ def runtime_measure(path, n_files, mt):
 
 def runtime_measure_mt(path, n_files, n_threads):
     if n_files == 0: return 0
-    if n_threads == 0: return runtime_measure(path, n_files, False)
+    if n_threads == 0: 
+        ROOT.ROOT.DisableImplicitMT()
+        return runtime_measure(path, n_files, False)
     
     ROOT.ROOT.EnableImplicitMT(n_threads)
     
