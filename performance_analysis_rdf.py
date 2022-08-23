@@ -40,7 +40,6 @@ def partition(path, n_files, n_processes):
 
 def to_numpy(files, result):
     if files.empty(): return
-#     ROOT.ROOT.DisableImplicitMT()
     data = ROOT.RDataFrame("rootuple/CandidateTree", files)
     cut = data.Filter("candidate_charge == 0")\
           .Filter("candidate_cosAlpha > 0.99")\
@@ -53,17 +52,15 @@ def to_numpy(files, result):
     result.append(cut.AsNumpy(["candidate_vMass"])["candidate_vMass"])
 
 def runtime_measure(path, n_files, mt):
+    ROOT.ROOT.DisableImplicitMT()
     if n_files == 0: return 0
-    # Specify the number of threads
     if mt: ROOT.ROOT.EnableImplicitMT()
     
-    # Get paths to all the files to be read 
     filenames = sorted(os.listdir(path))
     files_to_read = ROOT.std.vector('string')()
     for i in range(n_files):
         files_to_read.push_back(path + filenames[i])
     
-    # Measure runtime
     start_time = time.time()
     
     data = ROOT.RDataFrame("rootuple/CandidateTree", files_to_read)
@@ -80,9 +77,10 @@ def runtime_measure(path, n_files, mt):
     return time.time() - start_time
 
 def runtime_measure_mt(path, n_files, n_threads):
+    ROOT.ROOT.DisableImplicitMT()
+
     if n_files == 0: return 0
     if n_threads == 0: 
-        ROOT.ROOT.DisableImplicitMT()
         return runtime_measure(path, n_files, False)
     
     ROOT.ROOT.EnableImplicitMT(n_threads)
@@ -110,6 +108,7 @@ def runtime_measure_mt(path, n_files, n_threads):
     return time.time() - start_time
 
 def runtime_measure_mp(path, n_files, n_processes):
+    ROOT.ROOT.DisableImplicitMT()
     if n_files == 0: return 0
     if n_processes == 0: return runtime_measure(path, n_files, False)
     start_time = time.time()
