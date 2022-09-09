@@ -148,7 +148,7 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
             
             
 
-path = "/lustrehome/hdhoang2001/data/32_files/"
+path = "../data/32_files/"
 target_dir = "runtime_tests_rdf/32_files/" + str(sys.argv[1])
 
 # runtime_vs_variable(path, target_dir, runtime_measure_mt, "threads", 4, 20, 128, 128)
