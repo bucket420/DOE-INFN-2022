@@ -123,11 +123,11 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
         with open(result_path, "a", newline="") as f:
             csv.writer(f).writerow(y)
         
-path = "../data/128_files/"
-target_dir = "runtime_tests_uproot/" + str(sys.argv[1])
+path = "../data/32_files/"
+target_dir = "runtime_tests_uproot/32_files/" + str(sys.argv[1])
 
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 128)
-# runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 64)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 32)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 64)
 runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 32)
 runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 20, 128)
 
