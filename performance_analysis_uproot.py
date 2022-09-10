@@ -127,8 +127,8 @@ path = "../data/32_files/"
 target_dir = "runtime_tests_uproot/32_files/" + str(sys.argv[1])
 
 runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 32)
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 64)
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 32)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 32, 64)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 32, 32)
 runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 20, 128)
 
 
