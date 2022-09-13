@@ -8,22 +8,6 @@ import sys
 import time
 import uproot
 
-def get_total_size(path, n_files):
-    filenames = sorted(os.listdir(path))
-    total_size = sum([os.path.getsize(path + filenames[i]) for i in range(n_files)])
-    return total_size / (2**30)
-
-def col_average(data):
-    n_rows = len(data)
-    n_cols = len(data[0])
-    return [sum([data[i][j] for i in range(1, n_rows)]) / (n_rows - 1) for j in range(n_cols)]
-
-def col_standard_deviation(data):
-    n_rows = len(data)
-    n_cols = len(data[0])
-    mean = col_average(data)
-    return [(sum([(data[i][j] - mean[j])**2 for i in range(1, n_rows)]) / (n_rows - 1))**0.5 for j in range(n_cols)]
- 
 def partition(path, n_files, n_processes):
     filenames = sorted(os.listdir(path))
     partitions = []
