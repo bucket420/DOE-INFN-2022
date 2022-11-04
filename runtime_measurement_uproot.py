@@ -77,17 +77,18 @@ def partition(file_entries, n_processes):
 def read_slice(paths, slices, index, result):
     data_slice = []
     for i in range(slices[index][0], slices[index][2] + 1):
-        data_slice.append(uproot.open(paths[i], object_cache=None, array_cache=None).arrays("candidate_vMass", 
-                              "(candidate_charge == 0)\
-                              & (candidate_cosAlpha > 0.99)\
-                              & (candidate_lxy / candidate_lxyErr > 3.0)\
-                              & (candidate_vProb > 0.05)\
-                              & (ditrack_mass > 1.014) & (ditrack_mass < 1.024)\
-                              & (candidate_vMass > 5.33) & (candidate_vMass < 5.4)",
-                              entry_start=slices[index][1] if i == slices[index][0] else None,
-                              entry_stop=slices[index][3] if i == slices[index][2] else None,
-                              array_cache=None,
-                              library="np")["candidate_vMass"])
+        with uproot.open(paths[i], object_cache=None, array_cache=None) as file:
+            data_slice.append(file.arrays("candidate_vMass", 
+                                  "(candidate_charge == 0)\
+                                  & (candidate_cosAlpha > 0.99)\
+                                  & (candidate_lxy / candidate_lxyErr > 3.0)\
+                                  & (candidate_vProb > 0.05)\
+                                  & (ditrack_mass > 1.014) & (ditrack_mass < 1.024)\
+                                  & (candidate_vMass > 5.33) & (candidate_vMass < 5.4)",
+                                  entry_start=slices[index][1] if i == slices[index][0] else None,
+                                  entry_stop=slices[index][3] if i == slices[index][2] else None,
+                                  array_cache=None,
+                                  library="np")["candidate_vMass"])
     result.append(np.concatenate(tuple(data_slice)))
     
 def runtime_measure_mp(path, n_files, n_processes):
@@ -95,7 +96,7 @@ def runtime_measure_mp(path, n_files, n_processes):
     if n_processes == 0: return runtime_measure(path, n_files)
     start = time.time()
     paths = [path + filename + ":rootuple/CandidateTree" for filename in sorted(os.listdir(path))[:n_files]]
-    file_entries = [n[2] for n in uproot.num_entries([path + filename + ":rootuple/CandidateTree" for filename in sorted(os.listdir(path))])]
+    file_entries = [n[2] for n in uproot.num_entries([p for p in paths])]
     slices = partition(file_entries, n_processes)
     result = multiprocessing.Manager().list()
     processes = []
@@ -114,18 +115,19 @@ def runtime_measure_mp(path, n_files, n_processes):
 def runtime_measure(path, n_files):
     if n_files == 0: return 0
     start = time.time()
-    files = [uproot.open(path=path + filename + ":rootuple/CandidateTree", object_cache=None, array_cache=None) for filename in sorted(os.listdir(path))[:n_files]]
+    paths = [path + filename + ":rootuple/CandidateTree" for filename in sorted(os.listdir(path))[:n_files]]
     data = []
-    for file in files:
-        data.append(file.arrays("candidate_vMass", 
-                              "(candidate_charge == 0)\
-                              & (candidate_cosAlpha > 0.99)\
-                              & (candidate_lxy / candidate_lxyErr > 3.0)\
-                              & (candidate_vProb > 0.05)\
-                              & (ditrack_mass > 1.014) & (ditrack_mass < 1.024)\
-                              & (candidate_vMass > 5.33) & (candidate_vMass < 5.4)",
-                              array_cache=None,
-                              library="np")["candidate_vMass"])
+    for p in paths:
+        with uproot.open(p, object_cache=None, array_cache=None) as file:
+            data.append(file.arrays("candidate_vMass", 
+                                  "(candidate_charge == 0)\
+                                  & (candidate_cosAlpha > 0.99)\
+                                  & (candidate_lxy / candidate_lxyErr > 3.0)\
+                                  & (candidate_vProb > 0.05)\
+                                  & (ditrack_mass > 1.014) & (ditrack_mass < 1.024)\
+                                  & (candidate_vMass > 5.33) & (candidate_vMass < 5.4)",
+                                  array_cache=None,
+                                  library="np")["candidate_vMass"])
         
     np.concatenate(tuple(data))
     
