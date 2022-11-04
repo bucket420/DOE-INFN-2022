@@ -1,6 +1,5 @@
 import csv
 import math
-import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
