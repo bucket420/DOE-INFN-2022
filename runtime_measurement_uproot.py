@@ -74,7 +74,7 @@ def partition(file_entries, n_processes):
         entry_start = slices[-1][-1]
     return slices
 
-def read_slice_test(paths, slices, index, result):
+def read_slice(paths, slices, index, result):
     data_slice = []
     for i in range(slices[index][0], slices[index][2] + 1):
         data_slice.append(uproot.open(paths[i], object_cache=None, array_cache=None).arrays("candidate_vMass", 
@@ -90,7 +90,7 @@ def read_slice_test(paths, slices, index, result):
                               library="np")["candidate_vMass"])
     result.append(np.concatenate(tuple(data_slice)))
     
-def runtime_measure_mp_test(path, n_files, n_processes):
+def runtime_measure_mp(path, n_files, n_processes):
     if n_files == 0: return 0
     if n_processes == 0: return runtime_measure(path, n_files)
     start = time.time()
