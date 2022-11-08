@@ -15,54 +15,6 @@ def partition_helper(slice_entries, file_entries, file_curr, entry_curr):
     else:
         return partition_helper(slice_entries - file_entries[file_curr] + entry_curr, file_entries, file_curr + 1, 0)
 
-# def partition(files, n_processes):
-#     file_entries = [file.num_entries for file in files]
-#     slice_entries = math.ceil(sum(file_entries) / n_processes)
-#     slices = []
-#     file_start = 0
-#     entry_start = 0
-#     for i in range(n_processes):
-#         slices.append([file_start, entry_start] + partition_helper(slice_entries, file_entries, file_start, entry_start))
-#         file_start = slices[-1][-2]
-#         entry_start = slices[-1][-1]
-#     return slices
-
-# def read_slice(files, slices, index, data):
-#     data_slice = []
-#     for i in range(slices[index][0], slices[index][2] + 1):
-#         data_slice.append(files[i].arrays("candidate_vMass", 
-#                               "(candidate_charge == 0)\
-#                               & (candidate_cosAlpha > 0.99)\
-#                               & (candidate_lxy / candidate_lxyErr > 3.0)\
-#                               & (candidate_vProb > 0.05)\
-#                               & (ditrack_mass > 1.014) & (ditrack_mass < 1.024)\
-#                               & (candidate_vMass > 5.33) & (candidate_vMass < 5.4)",
-#                               entry_start=slices[index][1] if i == slices[index][0] else None,
-#                               entry_stop=slices[index][3] if i == slices[index][2] else None,
-#                               array_cache=None,
-#                               library="np")["candidate_vMass"])
-#     data.append(np.concatenate(tuple(data_slice)))
-
-# def runtime_measure_mp(path, n_files, n_processes):
-#     if n_files == 0: return 0
-#     if n_processes == 0: return runtime_measure(path, n_files)
-#     start = time.time()
-#     files = [uproot.open(path=path + filename + ":rootuple/CandidateTree", object_cache=None, array_cache=None) for filename in sorted(os.listdir(path))[:n_files]]
-#     slices = partition(files, n_processes)
-#     data = multiprocessing.Manager().list()
-#     processes = []
-#     for i in range(n_processes):
-#         p = multiprocessing.Process(target=read_slice, args=[files, slices, i, data])
-#         p.start()
-#         processes.append(p)
-
-#     for p in processes:
-#         p.join()
-    
-#     np.concatenate(tuple(data))
-    
-#     return time.time() - start
-
 def partition(file_entries, n_processes):
     slice_entries = math.ceil(sum(file_entries) / n_processes)
     slices = []
@@ -151,13 +103,13 @@ def runtime_vs_variable(path, target_dir, measure_function, variable, step, n_lo
         with open(result_path, "a", newline="") as f:
             csv.writer(f).writerow(y)
         
-path = "../data/128_files/"
-target_dir = "runtime_tests_uproot/128_files/" + str(sys.argv[1])
+path = "../data/32_files/"
+target_dir = "runtime_tests_uproot/32_files/" + str(sys.argv[1])
 
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 128)
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 64)
-runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 4, 20, 128, 32)
-runtime_vs_variable(path, target_dir, runtime_measure, "size", 4, 20, 128)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "processes", 4, 20, 128, 32)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 1, 20, 32, 64)
+runtime_vs_variable(path, target_dir, runtime_measure_mp, "size_mp", 1, 20, 32, 32)
+runtime_vs_variable(path, target_dir, runtime_measure, "size", 1, 20, 32)
 
 
 
